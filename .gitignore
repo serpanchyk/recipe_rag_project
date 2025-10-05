@@ -1,1 +1,3 @@
 data/full_dataset.csv
+data/dataset_embeddings.json
+.env
