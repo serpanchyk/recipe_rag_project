@@ -57,7 +57,7 @@ def cooking_instructions(title: str) -> str:
     user_prompt = f"""
         [TASK DEFINITION]
         Task: Given the dish's title, **generate a complete recipe**. This must include a detailed
-        **step-by-step cooking instructions**. If the answer is not contained in the context, say "I don't know.
+        **step-by-step cooking instructions**. If the answer is not contained in the context, say "I don't know."
 
         [CONTEXT/INPUT BLOCK]
         --- DISH TITLE ---
@@ -97,7 +97,9 @@ def required_ingredients(title):
     """
     user_prompt = f"""
         [TASK DEFINITION]
-        Task: Given the dish's title, **generate a complete list of ingedients**. This must include a **full ingredients list** with specific measurements. If the answer is not contained in the context, say "I don't know.
+        Task: Given the dish's title, **generate a complete list of ingedients**. 
+        This must include a **full ingredients list** with specific measurements. 
+        If the answer is not contained in the context, say "I don't know."
 
         [CONTEXT/INPUT BLOCK]
         --- DISH TITLE ---

@@ -3,6 +3,7 @@ import httpx
 import json
 from typing import List, Dict
 
+
 FASTAPI_URL = "http://localhost:8000/chat"
 
 def chat_with_assistant(message: str, history: List[List[str]]) -> str:

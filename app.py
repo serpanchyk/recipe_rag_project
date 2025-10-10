@@ -1,5 +1,8 @@
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+import gradio as gr
+from gradio.routes import mount_gradio_app
 from utils.rag import (
     recommend_recipes,
     required_ingredients,
@@ -24,21 +27,12 @@ app = FastAPI(
     description="RESTful API for retrival of receipts, using Qdrant and Azure OpenAI"
 )
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
-    if not request.history:
-        raise HTTPException(status_code=400, detail="No history provided")
+def process_rag_request(latest_user_message: str) -> tuple:
+    intent = determine_intent(latest_user_message)
 
-    latest_user_message = next((msg.content for msg in reversed(request.history) if msg.role == 'user'), None)
-
-    if not latest_user_message:
-        raise HTTPException(status_code=400, detail="No message provided")
+    rag_response = ""
 
     try:
-        intent = determine_intent(latest_user_message)
-
-        rag_response = ""
-
         if intent == "recommend_recipes":
             rag_response = recommend_recipes(latest_user_message)
 
@@ -52,9 +46,44 @@ async def chat_endpoint(request: ChatRequest):
 
         else:
             rag_response = "I couldn't understand your request"
+
+    except Exception as ex:
+        raise ex
+
+    return rag_response, intent
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest):
+    if not request.history:
+        raise HTTPException(status_code=400, detail="No history provided")
+
+    latest_user_message = next((msg.content for msg in reversed(request.history) if msg.role == 'user'), None)
+
+    if not latest_user_message:
+        raise HTTPException(status_code=400, detail="No message provided")
+
+    try:
+        rag_response, intent = process_rag_request(latest_user_message)
     except Exception as ex:
         print(f"RAG-pipeline error: {ex}")
         raise HTTPException(status_code=500, detail=f"On server RAG error: {str(ex)}")
 
     return ChatResponse(response=rag_response, intent=intent)
 
+def gradio_rag_handler(message: str, history: list) -> str:
+    try:
+        rag_response, _ = process_rag_request(message)
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=f"On server RAG error: {str(ex)}")
+
+    return rag_response
+
+gradio_ui = gr.ChatInterface(
+    fn = gradio_rag_handler,
+    title = "RAG-cook-assistant"
+)
+
+app = mount_gradio_app(app, gradio_ui, path="/ui")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
