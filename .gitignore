@@ -4,3 +4,4 @@ utils/data/dataset_embeddings.json
 .idea/
 anaconda_projects/
 .ipynb_checkpoints/
+*.pdf
